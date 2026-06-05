@@ -25,3 +25,6 @@ mlflow.db
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
