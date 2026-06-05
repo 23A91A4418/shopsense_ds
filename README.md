@@ -197,3 +197,20 @@ The pytest runner is configured via `pytest.ini` to isolate tests under the `tes
 - Clustering profile generation
 - Time series stationarity and forecasting
 - SHAP explainability calculations and feature drift tests
+
+---
+
+## 8. Notes on Synthetic Data & Model Performance
+
+### Why are the Churn Model Scores Perfect (1.0 across all metrics)?
+
+If you run the pipeline, you will notice that the Churn Classifier achieves a perfect score of **1.0** across all validation and test metrics (ROC AUC, PR AUC, Accuracy, Precision, Recall, and F1 Score). This is due to a deterministic data generation rule in the synthetic data generator (`shopsense/data_generator.py`) that results in target/data leakage:
+
+1. **Deterministic Separation**: 
+   - When generating transactions, the generator enforces that if a customer is marked as churned (`churn_label = 1`), they will have between 1 and 7 transactions (meaning `frequency` < 8) and their last purchase will be at least 180 days ago (`recency_days` > 180).
+   - If a customer is not churned (`churn_label = 0`), they will have between 8 and 40 transactions (`frequency` >= 8) and their last purchase will be within the last 90 days (`recency_days` < 90).
+2. **Perfect Decision Boundary**: 
+   - Because the pipeline constructs the features `frequency` and `recency_days` directly from these transactions, these features perfectly separate the classes with zero noise or overlap.
+   - Any classifier (e.g., XGBoost, Random Forest, or Logistic Regression) easily learns this perfect boundary, resulting in evaluation scores of exactly `1.0`.
+
+In a real-world setting, customer churn is stochastic and noisy. A real-world dataset would not contain such deterministic thresholds, and model performance scores would typically range from 0.70 to 0.85.
